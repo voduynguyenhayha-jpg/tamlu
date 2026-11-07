@@ -1,0 +1,21 @@
+site_name: Tài Liệu Tổng Hợp Tâm Lý Học
+site_description: Hệ thống hóa kiến thức đại học tâm lý học và liên kết chuyên ngành.
+theme:
+  name: material
+  palette:
+    primary: teal
+    accent: amber
+  features:
+    - navigation.tabs
+    - navigation.indexes
+    - search.suggest
+    - search.highlight
+
+nav:
+  - Trang Chủ: index.md
+  - Tầng 1 - Nền tảng:
+      - Giải phẫu thần kinh: tang-1-nen-tang/giai-phau-than-kinh.md
+  - Tầng 2 - Phát triển & Nhận thức:
+      - Lý thuyết Piaget: tang-2-nhan-thuc/piaget-nhan-thuc.md
+  - Tầng 3 - Ứng dụng & Lâm sàng:
+      - Tâm bệnh học: tang-3-lam-sang/tam-benh-hoc.md
