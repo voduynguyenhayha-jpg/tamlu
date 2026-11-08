@@ -1,604 +1,246 @@
 <!DOCTYPE html>
-<html lang="vi" class="dark">
+<html lang="vi">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vũ Trụ Tri Thức Tâm Lý Học 3D - Khám Phá Liên Kết Đại Học</title>
+    <title>Bản đồ Phân loại Hiện tượng Tâm lý - Cây Tri Thức</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: {
-                        cosmic: {
-                            950: '#030712',
-                            900: '#0b0f19',
-                            800: '#111827',
-                            700: '#1f2937',
-                        }
-                    }
-                }
-            }
-        }
-    </script>
-    <!-- Three.js CDN -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-    <!-- Font Inter & Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         body {
+            background-color: #0f172a;
+            color: #f8fafc;
             font-family: 'Inter', sans-serif;
-            background-color: #030712;
-            color: #f3f4f6;
             overflow: hidden;
-            margin: 0;
-            padding: 0;
+            user-select: none;
         }
-        #canvas-container {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            z-index: 1;
+        .node-card {
+            transition: all 0.2s ease;
         }
-        .ui-layer {
-            position: relative;
-            z-index: 10;
-            pointer-events: none;
-        }
-        .interactive {
-            pointer-events: auto;
-        }
-        /* Custom scrollbar for modals */
-        ::-webkit-scrollbar {
-            width: 6px;
-        }
-        ::-webkit-scrollbar-track {
-            background: rgba(17, 24, 39, 0.6);
-        }
-        ::-webkit-scrollbar-thumb {
-            background: rgba(75, 85, 99, 0.8);
-            border-radius: 3px;
-        }
-        .glass-panel {
-            background: rgba(11, 15, 25, 0.75);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-        @keyframes pulseGlow {
-            0%, 100% { opacity: 0.8; transform: scale(1); }
-            50% { opacity: 1; transform: scale(1.05); }
-        }
-        .node-pulse {
-            animation: pulseGlow 3s infinite ease-in-out;
+        .node-card:hover {
+            transform: translateY(-3px) scale(1.03);
+            box-shadow: 0 10px 25px -5px rgba(56, 189, 248, 0.4);
+            border-color: #38bdf8;
         }
     </style>
 </head>
-<body class="bg-cosmic-950 text-gray-100 h-screen w-screen selection:bg-teal-500 selection:text-white">
+<body class="w-screen h-screen relative">
 
-    <!-- 3D Canvas Container -->
-    <div id="canvas-container"></div>
+    <!-- Header / Hướng dẫn -->
+    <div class="absolute top-4 left-4 z-50 bg-slate-900/80 backdrop-blur-md border border-slate-700 p-4 rounded-xl shadow-2xl max-w-sm pointer-events-none">
+        <h1 class="text-lg font-bold text-sky-400 mb-1">🌳 Bản Đồ Hiện Tượng Tâm Lý</h1>
+        <p class="text-xs text-slate-300 leading-relaxed">
+            • <b>Kéo chuột (Drag):</b> Di chuyển vùng nhìn.<br>
+            • <b>Cuộn chuột (Scroll):</b> Phóng to / Thu nhỏ.<br>
+            • <b>Click vào thẻ:</b> Xem định nghĩa & ví dụ chi tiết.
+        </p>
+    </div>
 
-    <!-- UI Overlay Layer -->
-    <div class="ui-layer h-full w-full flex flex-col justify-between p-4 md:p-6 pointer-events-none">
-        
-        <!-- Top Header & Navigation Bar -->
-        <header class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 glass-panel p-4 rounded-2xl shadow-2xl interactive">
-            <div class="flex items-center space-x-3">
-                <div class="h-10 w-10 rounded-xl bg-gradient-to-tr from-cyan-500 via-teal-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-teal-500/30">
-                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path></svg>
-                </div>
-                <div>
-                    <h1 class="text-lg md:text-xl font-bold bg-gradient-to-r from-cyan-400 via-teal-300 to-indigo-400 bg-clip-text text-transparent">Vũ Trụ Tri Thức Tâm Lý Học</h1>
-                    <p class="text-xs text-gray-400">Hệ thống liên kết học phần đại học & tiền đề nhận thức</p>
-                </div>
-            </div>
+    <!-- Thanh công cụ điều khiển -->
+    <div class="absolute bottom-4 right-4 z-50 flex items-center gap-2 bg-slate-900/80 backdrop-blur-md border border-slate-700 p-2 rounded-xl shadow-2xl">
+        <button onclick="zoomIn()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-sky-400 font-bold rounded-lg transition">+</button>
+        <button onclick="resetView()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs rounded-lg transition">Mặc định</button>
+        <button onclick="zoomOut()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-sky-400 font-bold rounded-lg transition">-</button>
+    </div>
 
-            <!-- Tier Filter Pills -->
-            <div class="flex flex-wrap items-center gap-2">
-                <button onclick="filterTier('all')" id="btn-all" class="px-3 py-1.5 text-xs font-medium rounded-lg bg-teal-500/20 text-teal-300 border border-teal-500/40 hover:bg-teal-500/30 transition-all shadow-sm">🌌 Tất Cả</button>
-                <button onclick="filterTier(1)" id="btn-1" class="px-3 py-1.5 text-xs font-medium rounded-lg bg-cyan-500/10 text-cyan-300 border border-cyan-500/30 hover:bg-cyan-500/20 transition-all">🧬 Tầng 1: Sinh Học</button>
-                <button onclick="filterTier(2)" id="btn-2" class="px-3 py-1.5 text-xs font-medium rounded-lg bg-indigo-500/10 text-indigo-300 border border-indigo-500/30 hover:bg-indigo-500/20 transition-all">🧠 Tầng 2: Nhận Thức</button>
-                <button onclick="filterTier(3)" id="btn-3" class="px-3 py-1.5 text-xs font-medium rounded-lg bg-pink-500/10 text-pink-300 border border-pink-500/30 hover:bg-pink-500/20 transition-all">🏥 Tầng 3: Lâm Sàng</button>
-            </div>
-        </header>
+    <!-- Vùng Workspace chứa Sơ đồ 2D -->
+    <div id="viewport" class="w-full h-full cursor-grab active:cursor-grabbing relative overflow-hidden">
+        <div id="canvas" class="absolute top-0 left-0 w-[2400px] h-[1400px] origin-top-left">
+            
+            <!-- SVG Layer vẽ các đoạn thẳng nối thông tin -->
+            <svg class="absolute inset-0 w-full h-full pointer-events-none" id="connections-svg">
+                <!-- Các đường thẳng nối sẽ được render tự động qua JavaScript -->
+            </svg>
 
-        <!-- Center Guide Banner (Floating Instruction) -->
-        <div class="self-center glass-panel px-4 py-2 rounded-full shadow-lg text-xs text-gray-300 flex items-center space-x-2 animate-bounce interactive">
-            <span class="w-2 h-2 rounded-full bg-teal-400 animate-ping"></span>
-            <span>💡 <strong>Hướng dẫn:</strong> Giữ chuột & kéo để xoay không gian • Cuộn chuột để phóng to/thu nhỏ • Click hành tinh để xem chi tiết liên kết.</span>
-        </div>
+            <!-- HTML Nodes Layer -->
+            <div id="nodes-container" class="absolute inset-0 pointer-events-auto"></div>
 
-        <!-- Bottom Controls & Stats -->
-        <div class="flex flex-col md:flex-row justify-between items-end md:items-center gap-4">
-            <div class="glass-panel p-3 rounded-xl text-xs space-y-1 shadow-lg interactive max-w-xs">
-                <div class="font-semibold text-teal-400 flex items-center justify-between">
-                    <span>Hệ Thống Mạng Lưới</span>
-                    <span id="active-node-count" class="bg-teal-500/20 px-2 py-0.5 rounded text-teal-300 font-mono">10 Khái niệm</span>
-                </div>
-                <p class="text-gray-400 text-[11px]">Các đường sáng biểu thị quan hệ tiền đề (*Prerequisite*) và tương tác đa ngành.</p>
-            </div>
-
-            <!-- Reset Camera Button -->
-            <button onclick="resetCamera()" class="glass-panel px-4 py-2.5 rounded-xl text-xs font-medium text-gray-200 hover:text-white hover:bg-gray-800/80 transition-all shadow-lg flex items-center space-x-2 interactive">
-                <svg class="w-4 h-4 text-teal-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"></path></svg>
-                <span>Đặt Lại Góc Nhìn Vũ Trụ</span>
-            </button>
         </div>
     </div>
 
-    <!-- Modal Card for Node Details (Glassmorphism) -->
-    <div id="node-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-md opacity-0 pointer-events-none transition-all duration-300">
-        <div id="modal-content" class="glass-panel w-full max-w-xl max-h-[85vh] overflow-y-auto rounded-3xl p-6 md:p-8 shadow-2xl border border-teal-500/30 transform scale-95 transition-all duration-300">
-            <!-- Modal Header -->
-            <div class="flex items-start justify-between pb-4 border-b border-gray-700/60">
-                <div class="flex items-center space-x-3">
-                    <div id="modal-badge" class="px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-teal-500/20 text-teal-300 border border-teal-500/40">Tầng 1</div>
-                    <div>
-                        <h2 id="modal-title" class="text-xl md:text-2xl font-bold text-white">Tên Khái Niệm</h2>
-                        <p id="modal-module" class="text-xs text-teal-400 font-medium">Học phần chuyên ngành</p>
-                    </div>
-                </div>
-                <button onclick="closeModal()" class="p-2 rounded-xl bg-gray-800/80 text-gray-400 hover:text-white hover:bg-gray-700 transition-all">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                </button>
-            </div>
-
-            <!-- Modal Body Content -->
-            <div class="py-6 space-y-6">
-                <!-- Definition -->
-                <div>
-                    <h3 class="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-2">📖 Định Nghĩa Cốt Lõi</h3>
-                    <p id="modal-definition" class="text-sm md:text-base text-gray-200 leading-relaxed bg-gray-900/50 p-4 rounded-2xl border border-gray-800"></p>
-                </div>
-
-                <!-- Example / Case Study -->
-                <div>
-                    <h3 class="text-xs font-semibold uppercase tracking-wider text-teal-400 mb-2">💡 Ví Dụ Thực Tế & Đời Sống</h3>
-                    <p id="modal-example" class="text-sm text-gray-300 italic bg-teal-950/20 p-4 rounded-2xl border border-teal-900/40"></p>
-                </div>
-
-                <!-- Connectors & Prereqs -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div class="bg-gray-900/60 p-4 rounded-2xl border border-gray-800">
-                        <h4 class="text-xs font-semibold uppercase tracking-wider text-cyan-400 mb-1.5">🔗 Kiến Thức Tiền Đề</h4>
-                        <p id="modal-prereq" class="text-xs text-gray-300"></p>
-                    </div>
-                    <div class="bg-gray-900/60 p-4 rounded-2xl border border-gray-800">
-                        <h4 class="text-xs font-semibold uppercase tracking-wider text-indigo-400 mb-1.5">🚀 Bước Đệm / Ứng Dụng</h4>
-                        <p id="modal-next" class="text-xs text-gray-300"></p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Modal Footer -->
-            <div class="pt-4 border-t border-gray-700/60 flex justify-end">
-                <button onclick="closeModal()" class="px-5 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-medium text-sm transition-all shadow-lg shadow-teal-600/30">Đã Hiểu & Đóng</button>
+    <!-- Modal Chi tiết Khái niệm -->
+    <div id="detail-modal" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-sky-500/50 w-full max-w-md p-6 rounded-2xl shadow-2xl relative">
+            <button onclick="closeModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white text-xl font-bold">&times;</button>
+            <span id="modal-category" class="text-xs font-semibold px-2.5 py-1 bg-sky-500/20 text-sky-300 rounded-full">Phân loại</span>
+            <h2 id="modal-title" class="text-xl font-bold text-white mt-3 mb-2">Tiêu đề khái niệm</h2>
+            <p id="modal-desc" class="text-slate-300 text-sm leading-relaxed mb-4">Mô tả chi tiết...</p>
+            <div class="bg-slate-800/60 p-3 rounded-xl border border-slate-700">
+                <span class="text-xs font-bold text-amber-400 uppercase tracking-wider block mb-1">Ví dụ thực tế & Ý nghĩa nền:</span>
+                <p id="modal-example" class="text-xs text-slate-300 italic">Ví dụ...</p>
             </div>
         </div>
     </div>
 
-    <!-- JavaScript Application Logic -->
     <script>
-        // --- PSYCHOLOGY CURRICULUM KNOWLEDGE GRAPH DATA ---
-        const psychologyData = [
-            {
-                id: 1,
-                tier: 1,
-                name: "Giải Phẫu Thần Kinh",
-                module: "Cơ sở Sinh học",
-                color: 0x06b6d4, // Cyan
-                position: { x: -8, y: 3, z: -2 },
-                definition: "Nghiên cứu cấu trúc hệ thần kinh trung ương, vỏ não trước trán (Prefrontal Cortex), và các chất dẫn truyền thần kinh (Serotonin, Dopamine).",
-                example: "Sự suy giảm kết nối ở thùy trán ảnh hưởng trực tiếp đến khả năng kiểm soát xung động và lập kế hoạch.",
-                prerequisite: "Sinh học đại cương, Giải phẫu người.",
-                nextStep: "Tâm lý học nhận thức & Tâm bệnh học."
-            },
-            {
-                id: 2,
-                tier: 1,
-                name: "Thống Kê & Đo Lường",
-                module: "Công Cụ Nghiên Cứu",
-                color: 0x0284c7, // Sky Blue
-                position: { x: -8, y: -3, z: 2 },
-                definition: "Ứng dụng xác suất thống kê, kiểm định giả thuyết và thiết kế bảng hỏi tâm lý học chuẩn hóa (IQ, EQ, Thang đo trầm cảm Beck).",
-                example: "Đo lường mức độ tương quan giữa thời gian sử dụng mạng xã hội và mức độ lo âu ở thanh thiếu niên.",
-                prerequisite: "Toán cao cấp & Logic học.",
-                nextStep: "Phương pháp nghiên cứu thực nghiệm & Tâm lý học lâm sàng."
-            },
-            {
-                id: 3,
-                tier: 2,
-                name: "Tâm Lý Học Nhận Thức",
-                module: "Cơ Chế Nội Tại",
-                color: 0x6366f1, // Indigo
-                position: { x: 0, y: 4, z: -4 },
-                definition: "Khảo sát các quá trình tâm lý cấp cao: Trí nhớ làm việc (Working Memory), chú ý, tư duy, giải quyết vấn đề và mô hình Atkinson-Shiffrin.",
-                example: "Hiện tượng quá tải thông tin khiến học sinh không thể ghi nhớ bài giảng do vượt quá dung lượng trí nhớ làm việc (7±2 đơn vị).",
-                prerequisite: "Giải phẫu thần kinh (Tầng 1).",
-                nextStep: "Tâm lý học giáo dục & Tâm lý học nhận thức hành vi (CBT)."
-            },
-            {
-                id: 4,
-                tier: 2,
-                name: "Tâm Lý Học Phát Triển",
-                module: "Sự Biến Đổi Vòng Đời",
-                color: 0x8b5cf6, // Purple
-                position: { x: 0, y: -2, z: -1 },
-                definition: "Nghiên cứu sự phát triển tâm lý theo các giai đoạn từ bào thai đến tuổi già: Lý thuyết Piaget (Nhận thức) và Bowlby (Gắn bó).",
-                example: "Trẻ 8 tuổi bước vào giai đoạn thao tác cụ thể, hiểu được khái niệm bảo toàn thể tích chất lỏng.",
-                prerequisite: "Cơ sở sinh học & Thống kê tâm lý.",
-                nextStep: "Tâm bệnh học trẻ em & Tham vấn học đường."
-            },
-            {
-                id: 5,
-                tier: 2,
-                name: "Tâm Lý Học Nhân Cách",
-                module: "Cấu Trúc Tính Cách",
-                color: 0xd946ef, // Fuchsia
-                position: { x: 2, y: 2, z: 3 },
-                definition: "Nghiên cứu các đặc điểm ổn định của cá nhân qua mô hình Big Five (5 yếu tố nhân cách) và các cơ chế tự vệ của cái tôi theo phân tâm học.",
-                example: "Một người có điểm số Hướng ngoại (Extraversion) cao thường tìm kiếm năng lượng từ các hoạt động giao tiếp xã hội.",
-                prerequisite: "Tâm lý học đại cương.",
-                nextStep: "Tâm lý học tổ chức nhân sự & Trị liệu tâm lý."
-            },
-            {
-                id: 6,
-                tier: 3,
-                name: "Tâm Bệnh Học & Rối Loạn",
-                module: "Sai Lệch Tâm Thần",
-                color: 0xf43f5e, // Rose
-                position: { x: 8, y: 3, z: 1 },
-                definition: "Nghiên cứu các rối loạn tâm lý lâm sàng theo sổ tay DSM-5: Rối loạn phổ tự kỷ (ASD), ADHD, Trầm cảm lâm sàng và Rối loạn lo âu lan tỏa.",
-                example: "Sự suy giảm dẫn truyền Serotonin kết hợp sang chấn tâm lý dẫn đến hội chứng trầm cảm nặng.",
-                prerequisite: "Tâm lý học nhận thức & Tâm lý học phát triển.",
-                nextStep: "Tâm lý học lâm sàng & Kỹ thuật trị liệu."
-            },
-            {
-                id: 7,
-                tier: 3,
-                name: "Tâm Lý Học Lâm Sàng",
-                module: "Ứng Dụng & Trị Liệu",
-                color: 0xf97316, // Orange
-                position: { x: 8, y: -3, z: -3 },
-                definition: "Phương pháp đánh giá chẩn đoán lâm sàng và các liệu pháp can thiệp tâm lý dựa trên chứng cứ (Evidence-based practice như CBT, REBT).",
-                example: "Sử dụng liệu pháp nhận thức hành vi (CBT) để giúp thân chủ nhận diện và thay đổi các suy nghĩ tự động tiêu cực.",
-                prerequisite: "Tâm bệnh học & Tâm lý học nhân cách.",
-                nextStep: "Thực hành tham vấn chuyên sâu & Đạo đức nghề nghiệp."
-            },
-            {
-                id: 8,
-                tier: 3,
-                name: "Tâm Lý Học Xã Hội",
-                module: "Tương Tác Cộng Đồng",
-                color: 0xeab308, // Yellow
-                position: { x: 4, y: -4, z: 4 },
-                definition: "Khảo sát cách suy nghĩ, cảm xúc và hành vi của cá nhân bị ảnh hưởng bởi sự hiện diện thực tế hoặc tưởng tượng của người khác (Áp lực nhóm, Định kiến).",
-                example: "Hiệu ứng người bàng quan (Bystander effect) trong các tình huống cần trợ giúp khẩn cấp.",
-                prerequisite: "Tâm lý học phát triển & Đại cương.",
-                nextStep: "Tâm lý học tổ chức & Truyền thông thuyết phục."
-            }
+        // Dữ liệu cấu trúc cây gia phả tâm lý học (Từ thấp lên cao)
+        const treeData = [
+            // Gốc (Thấp nhất)
+            { id: 'root', label: 'HIỆN TƯỢNG TÂM LÝ', level: 0, x: 1100, y: 1150, parent: null, desc: 'Tổng hợp toàn bộ các hoạt động, trạng thái và thuộc tính tinh thần diễn ra trong não bộ con người.', example: 'Nền tảng cốt lõi của mọi khoa học hành vi và nhận thức.' },
+
+            // Tầng 1: Các tiêu chí phân loại
+            { id: 't_time', label: '1. Theo thời gian tồn tại', level: 1, x: 350, y: 850, parent: 'root', desc: 'Phân loại dựa trên tính ổn định và thời gian diễn ra của hiện tượng tâm lý trong đời sống tinh thần.', example: 'Giúp phân biệt giữa phản ứng tức thời và đặc điểm bền vững.' },
+            { id: 't_con', label: '2. Theo ý thức', level: 1, x: 800, y: 850, parent: 'root', desc: 'Phân loại dựa vào mức độ nhận biết và kiểm soát của lý trí.', example: 'Đánh giá mức độ chủ động của hành vi cá nhân.' },
+            { id: 't_act', label: '3. Theo hoạt động', level: 1, x: 1250, y: 850, parent: 'root', desc: 'Phân loại dựa trên trạng thái biểu hiện thành hành động cụ thể hay tiềm ẩn bên trong.', example: 'Phân biệt hiện tượng đang bộc lộ và hiện tượng dự trữ.' },
+            { id: 't_soc', label: '4. Cá nhân & Xã hội', level: 1, x: 1850, y: 850, parent: 'root', desc: 'Phân loại dựa trên chủ thể mang hiện tượng tâm lý là một cá nhân độc lập hay cộng đồng xã hội.', example: 'Kết nối tâm lý học cá nhân với tâm lý học xã hội và văn hóa.' },
+
+            // Tầng 2: Chi tiết thuộc Tầng 1
+            // Theo thời gian tồn tại
+            { id: 'n_qt', label: 'Quá trình tâm lý', level: 2, x: 150, y: 550, parent: 't_time', desc: 'Có mở đầu, diễn biến và kết thúc rõ ràng, thường gắn liền với sự phản ánh đối tượng.', example: 'Quá trình nhận thức (cảm giác, tri giác), quá trình cảm xúc, quá trình ý chí.' },
+            { id: 'n_tt', label: 'Trạng thái tâm lý', level: 2, x: 350, y: 550, parent: 't_time', desc: 'Làm nền cho các quá trình tâm lý, ổn định hơn quá trình nhưng kém ổn định hơn thuộc tính.', example: 'Tâm trạng vui vẻ, sự chú ý, sự mệt mỏi trong một khoảng thời gian.' },
+            { id: 'n_th', label: 'Thuộc tính tâm lý', level: 2, x: 550, y: 550, parent: 't_time', desc: 'Các nét tâm lý rất ổn định, khó hình thành và khó mất đi, cấu thành nhân cách cá nhân.', example: 'Xu hướng, tính cách, năng lực, khí chất của mỗi người.' },
+
+            // Theo ý thức
+            { id: 'n_c1', label: 'Có ý thức', level: 2, x: 700, y: 550, parent: 't_con', desc: 'Hiện tượng tâm lý mà con người nhận thức rõ ràng, làm chủ và điều khiển được hành vi của mình.', example: 'Học bài, giải toán, suy nghĩ có chủ định.' },
+            { id: 'n_c2', label: 'Chưa có ý thức', level: 2, x: 900, y: 550, parent: 't_con', desc: 'Hiện tượng diễn ra ở tầng vô thức, tiềm thức, cá nhân chưa kịp nhận ra hoặc không kiểm soát hoàn toàn.', example: 'Hành vi bản năng, thói quen lặp lại tự động, ẩn ức.' },
+
+            // Theo hoạt động
+            { id: 'n_a1', label: 'Sống động', level: 2, x: 1150, y: 550, parent: 't_act', desc: 'Đang trực tiếp diễn ra, bộc lộ mạnh mẽ trong hoạt động thực tiễn hiện tại.', example: 'Phản ứng tức giận khi gặp chuyện bất bình, tư duy giải quyết tình huống.' },
+            { id: 'n_a2', label: 'Tiềm tàng', level: 2, x: 1350, y: 550, parent: 't_act', desc: 'Tồn tại dưới dạng tiềm năng, chưa bộc lộ ngay nhưng sẽ chuyển hóa thành hành động khi có kích thích phù hợp.', example: 'Kiến thức đã học nhưng đang cất giấu trong trí nhớ dài hạn chưa cần dùng tới.' },
+
+            // Cá nhân & Xã hội (7 hiện tượng xã hội)
+            { id: 's_1', label: 'Phong tục', level: 2, x: 1500, y: 550, parent: 't_soc', desc: 'Thói quen lâu đời đã thành nếp, được cộng đồng thừa nhận và tuân theo từ thế hệ này sang thế hệ khác.', example: 'Phong tục gói bánh chưng ngày Tết.' },
+            { id: 's_2', label: 'Tập quán', level: 2, x: 1590, y: 550, parent: 't_soc', desc: 'Những hành vi quen thuộc trong sinh hoạt hàng ngày mang tính địa phương hoặc nhóm.', example: 'Thói quen uống trà buổi sáng của người lớn tuổi.' },
+            { id: 's_3', label: 'Định kiến', level: 2, x: 1680, y: 550, parent: 't_soc', desc: 'Thái độ đánh giá cứng nhắc, phiến diện dựa trên định hình sẵn về một nhóm người hoặc sự việc.', example: 'Định kiến giới tính trong công việc lãnh đạo.' },
+            { id: 's_4', label: 'Tin đồn', level: 2, x: 1770, y: 550, parent: 't_soc', desc: 'Thông tin chưa được kiểm chứng lan truyền nhanh chóng trong xã hội.', example: 'Tin đồn thất thiệt về giá cả thị trường.' },
+            { id: 's_5', label: 'Dư luận xã hội', level: 2, x: 1860, y: 550, parent: 't_soc', desc: 'Luồng ý kiến chung của đông đảo công chúng thể hiện thái độ đánh giá đối với các vấn đề chung.', example: 'Dư luận lên án hành vi xả rác bừa bãi nơi công cộng.' },
+            { id: 's_6', label: 'Tâm trạng xã hội', level: 2, x: 1950, y: 550, parent: 't_soc', desc: 'Sắc thái cảm xúc chung bao trùm một cộng đồng rộng lớn trong một thời kỳ nhất định.', example: 'Tâm trạng phấn khởi dịp đầu năm mới hoặc lo âu mùa dịch bệnh.' },
+            { id: 's_7', label: '"Mốt"', level: 2, x: 2040, y: 550, parent: 't_soc', desc: 'Sự ưa chuộng nhất thời đối với một kiểu dáng, phong cách ứng xử hay tiêu dùng trong xã hội.', example: 'Xu hướng thời trang hoặc phong cách sống thịnh hành trên mạng xã hội.' }
         ];
 
-        // Links / Connections between nodes representing prerequisites and cross-disciplinary flow
-        const connections = [
-            { from: 1, to: 3 }, // Giải phẫu thần kinh -> Tâm lý học nhận thức
-            { from: 1, to: 6 }, // Giải phẫu thần kinh -> Tâm bệnh học
-            { from: 2, to: 3 }, // Thống kê -> Tâm lý học nhận thức
-            { from: 3, to: 4 }, // Tâm lý học nhận thức -> Phát triển
-            { from: 4, to: 6 }, // Phát triển -> Tâm bệnh học
-            { from: 5, to: 7 }, // Nhân cách -> Lâm sàng
-            { from: 6, to: 7 }, // Tâm bệnh học -> Lâm sàng
-            { from: 4, to: 8 }, // Phát triển -> Xã hội
-            { from: 3, to: 5 }, // Nhận thức -> Nhân cách
-        ];
+        // Khởi tạo vị trí và render giao diện
+        const nodesContainer = document.getElementById('nodes-container');
+        const svgContainer = document.getElementById('connections-svg');
 
-        // --- THREE.JS SETUP ---
-        let scene, camera, renderer, controls;
-        let nodeMeshes = [];
-        let lineMeshes = [];
-        let raycaster, mouse;
-        let activeTierFilter = 'all';
+        function renderMap() {
+            nodesContainer.innerHTML = '';
+            svgContainer.innerHTML = '';
 
-        function init() {
-            const container = document.getElementById('canvas-container');
+            // 1. Vẽ các đoạn thẳng kết nối (Straight Lines)
+            treeData.forEach(node => {
+                if (node.parent) {
+                    const parentNode = treeData.find(p => p.id === node.parent);
+                    if (parentNode) {
+                        // Tính toán tọa độ tâm node (Giả định kích thước node card: rộng 140px, cao 60px)
+                        const x1 = parentNode.x + 70;
+                        const y1 = parentNode.y + 30;
+                        const x2 = node.x + 70;
+                        const y2 = node.y + 30;
 
-            // Scene
-            scene = new THREE.Scene();
-            scene.fog = new THREE.FogExp2(0x030712, 0.015);
-
-            // Camera
-            camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
-            camera.position.set(0, 5, 22);
-
-            // Renderer
-            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-            renderer.outputEncoding = THREE.sRGBEncoding;
-            container.appendChild(renderer.domElement);
-
-            // Orbit Controls
-            controls = new THREE.OrbitControls(camera, renderer.domElement);
-            controls.enableDamping = true;
-            controls.dampingFactor = 0.05;
-            controls.maxDistance = 60;
-            controls.minDistance = 5;
-
-            // Lighting
-            const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
-            scene.add(ambientLight);
-
-            const pointLight = new THREE.PointLight(0x06b6d4, 2, 50);
-            pointLight.position.set(0, 10, 10);
-            scene.add(pointLight);
-
-            const pointLight2 = new THREE.PointLight(0xd946ef, 2, 50);
-            pointLight2.position.set(0, -10, -10);
-            scene.add(pointLight2);
-
-            // Create Cosmic Starfield Background
-            createStarfield();
-
-            // Create Nodes & Connections
-            buildGraph();
-
-            // Raycasting for Interactivity
-            raycaster = new THREE.Raycaster();
-            mouse = new THREE.Vector2();
-
-            window.addEventListener('resize', onWindowResize);
-            window.addEventListener('click', onDocumentClick);
-
-            // Start Animation Loop
-            animate();
-        }
-
-        // --- CREATE COSMIC STARFIELD ---
-        function createStarfield() {
-            const starsGeometry = new THREE.BufferGeometry();
-            const starsCount = 2000;
-            const starPositions = new Float32Array(starsCount * 3);
-
-            for (let i = 0; i < starsCount * 3; i++) {
-                starPositions[i] = (Math.random() - 0.5) * 150;
-            }
-
-            starsGeometry.setAttribute('position', new THREE.BufferAttribute(starPositions, 3));
-            const starsMaterial = new THREE.PointsMaterial({
-                color: 0xffffff,
-                size: 0.6,
-                transparent: true,
-                opacity: 0.8
-            });
-
-            const starField = new THREE.Points(starsGeometry, starsMaterial);
-            scene.add(starField);
-        }
-
-        // --- BUILD KNOWLEDGE GRAPH NODES & EDGES ---
-        function buildGraph() {
-            // Clear existing meshes if any
-            nodeMeshes.forEach(m => scene.remove(m));
-            lineMeshes.forEach(l => scene.remove(l));
-            nodeMeshes = [];
-            lineMeshes = [];
-
-            const nodeMap = new Map();
-
-            // Create Nodes (Spheres + Glowing Aura + Labels via Sprite/Canvas)
-            psychologyData.forEach(data => {
-                const group = new THREE.Group();
-                group.userData = data;
-
-                // Core Sphere
-                const sphereGeo = new THREE.SphereGeometry(0.8, 32, 32);
-                const sphereMat = new THREE.MeshStandardMaterial({
-                    color: data.color,
-                    emissive: data.color,
-                    emissiveIntensity: 0.5,
-                    roughness: 0.3,
-                    metalness: 0.8
-                });
-                const sphereMesh = new THREE.Mesh(sphereGeo, sphereMat);
-                group.add(sphereMesh);
-
-                // Outer Glowing Aura Ring
-                const auraGeo = new THREE.SphereGeometry(1.1, 16, 16);
-                const auraMat = new THREE.MeshBasicMaterial({
-                    color: data.color,
-                    transparent: true,
-                    opacity: 0.2,
-                    wireframe: true
-                });
-                const auraMesh = new THREE.Mesh(auraGeo, auraMat);
-                group.add(auraMesh);
-
-                // Text Label Sprite
-                const canvas = document.createElement('canvas');
-                const context = canvas.getContext('2d');
-                context.font = 'bold 36px Inter, sans-serif';
-                const textWidth = context.measureText(data.name).width;
-                canvas.width = textWidth + 40;
-                canvas.height = 64;
-
-                context.font = 'bold 36px Inter, sans-serif';
-                context.fillStyle = '#ffffff';
-                context.textAlign = 'center';
-                context.textBaseline = 'middle';
-                context.shadowColor = 'rgba(0, 0, 0, 0.8)';
-                context.shadowBlur = 8;
-                context.fillText(data.name, canvas.width / 2, canvas.height / 2);
-
-                const texture = new THREE.CanvasTexture(canvas);
-                const spriteMat = new THREE.SpriteMaterial({ map: texture, transparent: true });
-                const sprite = new THREE.Sprite(spriteMat);
-                sprite.scale.set(3, 1.5, 1);
-                sprite.position.set(0, 1.6, 0);
-                group.add(sprite);
-
-                // Position Group
-                group.position.set(data.position.x, data.position.y, data.position.z);
-                scene.add(group);
-                nodeMeshes.push(group);
-                nodeMap.set(data.id, group);
-            });
-
-            // Create Glowing Connection Lines
-            connections.forEach(conn => {
-                const nodeA = nodeMap.get(conn.from);
-                const nodeB = nodeMap.get(conn.to);
-
-                if (nodeA && nodeB) {
-                    const points = [nodeA.position, nodeB.position];
-                    const lineGeo = new THREE.BufferGeometry().setFromPoints(points);
-                    const lineMat = new THREE.LineBasicMaterial({
-                        color: 0x06b6d4,
-                        transparent: true,
-                        opacity: 0.35,
-                        linewidth: 2
-                    });
-                    const line = new THREE.Line(lineGeo, lineMat);
-                    scene.add(line);
-                    lineMeshes.push(line);
-                }
-            });
-
-            updateNodeVisibility();
-        }
-
-        // --- FILTER TIERS ---
-        function filterTier(tier) {
-            activeTierFilter = tier;
-
-            // Update button styles
-            ['all', 1, 2, 3].forEach(t => {
-                const btn = document.getElementById(`btn-${t}`);
-                if (btn) {
-                    if (t === tier) {
-                        btn.className = "px-3 py-1.5 text-xs font-medium rounded-lg bg-teal-500/30 text-teal-200 border border-teal-500/60 shadow-md transition-all";
-                    } else {
-                        btn.className = "px-3 py-1.5 text-xs font-medium rounded-lg bg-gray-800/60 text-gray-400 border border-gray-700 hover:bg-gray-800 transition-all";
+                        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                        line.setAttribute('x1', x1);
+                        line.setAttribute('y1', y1);
+                        line.setAttribute('x2', x2);
+                        line.setAttribute('y2', y2);
+                        line.setAttribute('stroke', '#38bdf8');
+                        line.setAttribute('stroke-width', '2');
+                        line.setAttribute('stroke-opacity', '0.4');
+                        svgContainer.appendChild(line);
                     }
                 }
             });
 
-            updateNodeVisibility();
+            // 2. Vẽ các thẻ node hiển thị thông tin
+            treeData.forEach(node => {
+                const card = document.createElement('div');
+                card.className = `node-card absolute bg-slate-900/90 border border-slate-700 p-3 rounded-xl shadow-lg cursor-pointer flex flex-col items-center justify-center text-center w-[140px] h-[60px] backdrop-blur-sm`;
+                card.style.left = `${node.x}px`;
+                card.style.top = `${node.y}px`;
+                
+                // Màu sắc phân biệt các tầng (Cây gia phả)
+                if (node.level === 0) {
+                    card.className += ` border-amber-500 bg-amber-950/40 shadow-amber-500/20`;
+                } else if (node.level === 1) {
+                    card.className += ` border-sky-500 bg-sky-950/40`;
+                } else {
+                    card.className += ` border-slate-600 hover:border-sky-400`;
+                }
+
+                card.innerHTML = `
+                    <span class="text-xs font-bold text-slate-100 line-clamp-2">${node.label}</span>
+                `;
+
+                card.onclick = () => openModal(node);
+                nodesContainer.appendChild(card);
+            });
         }
 
-        function updateNodeVisibility() {
-            let visibleCount = 0;
-            nodeMeshes.forEach(node => {
-                const matches = (activeTierFilter === 'all' || node.userData.tier === activeTierFilter);
-                node.visible = matches;
-                if (matches) visibleCount++;
-            });
-
-            // Hide/show lines based on connected node visibility
-            lineMeshes.forEach((line, index) => {
-                const conn = connections[index];
-                const nodeA = nodeMeshes.find(n => n.userData.id === conn.from);
-                const nodeB = nodeMeshes.find(n => n.userData.id === conn.to);
-                if (nodeA && nodeB) {
-                    line.visible = nodeA.visible && nodeB.visible;
-                }
-            });
-
-            document.getElementById('active-node-count').innerText = `${visibleCount} Khái niệm`;
-        }
-
-        // --- INTERACTION & RAYCASTING ---
-        function onDocumentClick(event) {
-            // Ignore clicks on UI overlay
-            if (event.target.closest('.ui-layer') || event.target.closest('#node-modal')) return;
-
-            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
-
-            raycaster.setFromCamera(mouse, camera);
-
-            // Collect all spheres for intersection
-            const intersectObjects = [];
-            nodeMeshes.forEach(group => {
-                if (group.visible && group.children[0]) {
-                    intersectObjects.push(group.children[0]);
-                }
-            });
-
-            const intersects = raycaster.intersectObjects(intersectObjects);
-
-            if (intersects.length > 0) {
-                const clickedSphere = intersects[0].object;
-                const parentGroup = clickedSphere.parent;
-                if (parentGroup && parentGroup.userData) {
-                    openModal(parentGroup.userData);
-                }
-            }
-        }
-
-        // --- MODAL CONTROLS ---
-        function openModal(data) {
-            document.getElementById('modal-title').innerText = data.name;
-            document.getElementById('modal-module').innerText = `Học phần: ${data.module}`;
-            document.getElementById('modal-badge').innerText = `Tầng ${data.tier}: ${data.tier === 1 ? 'Nền Tảng Sinh Học' : data.tier === 2 ? 'Nhận Thức & Phát Triển' : 'Lâm Sàng & Ứng Dụng'}`;
-            document.getElementById('modal-definition').innerText = data.definition;
-            document.getElementById('modal-example').innerText = `"${data.example}"`;
-            document.getElementById('modal-prereq').innerText = data.prerequisite;
-            document.getElementById('modal-next').innerText = data.nextStep;
-
-            const modal = document.getElementById('node-modal');
-            const content = document.getElementById('modal-content');
-            modal.classList.remove('opacity-0', 'pointer-events-none');
-            content.classList.remove('scale-95');
-            content.classList.add('scale-100');
+        // Xử lý Modal hiển thị chi tiết
+        function openModal(node) {
+            document.getElementById('modal-title').innerText = node.label;
+            document.getElementById('modal-desc').innerText = node.desc;
+            document.getElementById('modal-example').innerText = node.example;
+            document.getElementById('modal-category').innerText = node.level === 0 ? 'Gốc hệ thống' : `Tầng phân loại cấp ${node.level}`;
+            document.getElementById('detail-modal').classList.remove('hidden');
         }
 
         function closeModal() {
-            const modal = document.getElementById('node-modal');
-            const content = document.getElementById('modal-content');
-            modal.classList.add('opacity-0', 'pointer-events-none');
-            content.classList.remove('scale-100');
-            content.classList.add('scale-95');
+            document.getElementById('detail-modal').classList.add('hidden');
         }
 
-        function resetCamera() {
-            controls.reset();
-            camera.position.set(0, 5, 22);
-            controls.target.set(0, 0, 0);
+        // Tương tác Kéo thả (Pan) & Phóng to thu nhỏ (Zoom)
+        const viewport = document.getElementById('viewport');
+        const canvas = document.getElementById('canvas');
+
+        let isDragging = false;
+        let startX, startY;
+        let panX = -350;
+        let panY = -150;
+        let scale = 0.8;
+
+        function updateTransform() {
+            canvas.style.transform = `translate(${panX}px, ${panY}px) scale(${scale})`;
         }
 
-        function onWindowResize() {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
+        viewport.addEventListener('mousedown', (e) => {
+            if(e.target.closest('.node-card')) return;
+            isDragging = true;
+            startX = e.clientX - panX;
+            startY = e.clientY - panY;
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+            panX = e.clientX - startX;
+            panY = e.clientY - startY;
+            updateTransform();
+        });
+
+        window.addEventListener('mouseup', () => {
+            isDragging = false;
+        });
+
+        viewport.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            const zoomIntensity = 0.1;
+            if (e.deltaY < 0) {
+                scale = Math.min(scale + zoomIntensity, 2.0);
+            } else {
+                scale = Math.max(scale - zoomIntensity, 0.4);
+            }
+            updateTransform();
+        }, { passive: false });
+
+        function zoomIn() {
+            scale = Math.min(scale + 0.15, 2.0);
+            updateTransform();
         }
 
-        // --- ANIMATION LOOP ---
-        function animate() {
-            requestAnimationFrame(animate);
-
-            // Gentle rotation for node auras and floating effect
-            const time = Date.now() * 0.001;
-            nodeMeshes.forEach((group, idx) => {
-                if (group.visible) {
-                    group.children[1].rotation.x += 0.01;
-                    group.children[1].rotation.y += 0.015;
-                    // Floating hover
-                    group.position.y = group.userData.position.y + Math.sin(time * 1.5 + idx) * 0.15;
-                }
-            });
-
-            controls.update();
-            renderer.render(scene, camera);
+        function zoomOut() {
+            scale = Math.max(scale - 0.15, 0.4);
+            updateTransform();
         }
 
-        // Run on load
-        window.onload = init;
+        function resetView() {
+            panX = -350;
+            panY = -150;
+            scale = 0.8;
+            updateTransform();
+        }
+
+        // Khởi chạy khi tải trang
+        renderMap();
+        updateTransform();
     </script>
 </body>
 </html>
