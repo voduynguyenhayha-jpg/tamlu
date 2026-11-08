@@ -15,41 +15,60 @@
             user-select: none;
         }
         .node-card {
-            transition: all 0.2s ease;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
         }
         .node-card:hover {
-            transform: translateY(-3px) scale(1.03);
-            box-shadow: 0 10px 25px -5px rgba(56, 189, 248, 0.4);
+            transform: translateY(-4px) scale(1.05);
+            box-shadow: 0 15px 30px -5px rgba(56, 189, 248, 0.5);
             border-color: #38bdf8;
+            z-index: 100;
+        }
+        /* Custom Scrollbar cho modal */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1e293b;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #475569;
+            border-radius: 3px;
         }
     </style>
 </head>
 <body class="w-screen h-screen relative">
 
-    <!-- Header / Hướng dẫn -->
-    <div class="absolute top-4 left-4 z-50 bg-slate-900/80 backdrop-blur-md border border-slate-700 p-4 rounded-xl shadow-2xl max-w-sm pointer-events-none">
-        <h1 class="text-lg font-bold text-sky-400 mb-1">🌳 Bản Đồ Hiện Tượng Tâm Lý</h1>
-        <p class="text-xs text-slate-300 leading-relaxed">
+    <!-- Header / Hướng dẫn & Tìm kiếm -->
+    <div class="absolute top-4 left-4 z-50 bg-slate-900/90 backdrop-blur-md border border-slate-700 p-4 rounded-2xl shadow-2xl max-w-sm">
+        <h1 class="text-lg font-bold text-sky-400 mb-1 flex items-center gap-2">
+            <span>🌳</span> Bản Đồ Phân Loại Tâm Lý
+        </h1>
+        <p class="text-xs text-slate-300 leading-relaxed mb-3">
             • <b>Kéo chuột (Drag):</b> Di chuyển vùng nhìn.<br>
             • <b>Cuộn chuột (Scroll):</b> Phóng to / Thu nhỏ.<br>
             • <b>Click vào thẻ:</b> Xem định nghĩa & ví dụ chi tiết.
         </p>
+        <!-- Ô tìm kiếm nhanh -->
+        <div class="relative">
+            <input type="text" id="search-input" placeholder="Tìm kiếm khái niệm..." oninput="handleSearch(this.value)" 
+                class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-white placeholder-slate-400 focus:outline-none focus:border-sky-400 transition">
+        </div>
     </div>
 
     <!-- Thanh công cụ điều khiển -->
-    <div class="absolute bottom-4 right-4 z-50 flex items-center gap-2 bg-slate-900/80 backdrop-blur-md border border-slate-700 p-2 rounded-xl shadow-2xl">
-        <button onclick="zoomIn()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-sky-400 font-bold rounded-lg transition">+</button>
-        <button onclick="resetView()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs rounded-lg transition">Mặc định</button>
-        <button onclick="zoomOut()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-sky-400 font-bold rounded-lg transition">-</button>
+    <div class="absolute bottom-4 right-4 z-50 flex items-center gap-2 bg-slate-900/90 backdrop-blur-md border border-slate-700 p-2 rounded-2xl shadow-2xl">
+        <button onclick="zoomIn()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-sky-400 font-bold rounded-xl transition">+</button>
+        <button onclick="resetView()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs rounded-xl transition font-medium">Mặc định</button>
+        <button onclick="zoomOut()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-sky-400 font-bold rounded-xl transition">-</button>
     </div>
 
     <!-- Vùng Workspace chứa Sơ đồ 2D -->
     <div id="viewport" class="w-full h-full cursor-grab active:cursor-grabbing relative overflow-hidden">
-        <div id="canvas" class="absolute top-0 left-0 w-[2400px] h-[1400px] origin-top-left">
+        <div id="canvas" class="absolute top-0 left-0 w-[5600px] h-[2000px] origin-top-left">
             
             <!-- SVG Layer vẽ các đoạn thẳng nối thông tin -->
             <svg class="absolute inset-0 w-full h-full pointer-events-none" id="connections-svg">
-                <!-- Các đường thẳng nối sẽ được render tự động qua JavaScript -->
+                <!-- Các đường thẳng nối render tự động -->
             </svg>
 
             <!-- HTML Nodes Layer -->
@@ -59,69 +78,110 @@
     </div>
 
     <!-- Modal Chi tiết Khái niệm -->
-    <div id="detail-modal" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div id="detail-modal" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm hidden flex items-center justify-center p-4">
         <div class="bg-slate-900 border border-sky-500/50 w-full max-w-md p-6 rounded-2xl shadow-2xl relative">
-            <button onclick="closeModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white text-xl font-bold">&times;</button>
+            <button onclick="closeModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white text-2xl font-bold">&times;</button>
             <span id="modal-category" class="text-xs font-semibold px-2.5 py-1 bg-sky-500/20 text-sky-300 rounded-full">Phân loại</span>
             <h2 id="modal-title" class="text-xl font-bold text-white mt-3 mb-2">Tiêu đề khái niệm</h2>
             <p id="modal-desc" class="text-slate-300 text-sm leading-relaxed mb-4">Mô tả chi tiết...</p>
-            <div class="bg-slate-800/60 p-3 rounded-xl border border-slate-700">
-                <span class="text-xs font-bold text-amber-400 uppercase tracking-wider block mb-1">Ví dụ thực tế & Ý nghĩa nền:</span>
-                <p id="modal-example" class="text-xs text-slate-300 italic">Ví dụ...</p>
+            <div class="bg-slate-800/80 p-3.5 rounded-xl border border-slate-700">
+                <span class="text-xs font-bold text-amber-400 uppercase tracking-wider block mb-1">Ví dụ thực tế & Ý nghĩa:</span>
+                <p id="modal-example" class="text-xs text-slate-300 italic leading-relaxed">Ví dụ...</p>
             </div>
         </div>
     </div>
 
     <script>
-        // Dữ liệu cấu trúc cây gia phả tâm lý học (Từ thấp lên cao)
+        // Dữ liệu cấu trúc cây gia phả tâm lý học (Từ thấp lên cao, mở rộng toàn diện)
         const treeData = [
             // Gốc (Thấp nhất)
-            { id: 'root', label: 'HIỆN TƯỢNG TÂM LÝ', level: 0, x: 1100, y: 1150, parent: null, desc: 'Tổng hợp toàn bộ các hoạt động, trạng thái và thuộc tính tinh thần diễn ra trong não bộ con người.', example: 'Nền tảng cốt lõi của mọi khoa học hành vi và nhận thức.' },
+            { id: 'root', label: 'HIỆN TƯỢNG TÂM LÝ', level: 0, x: 3100, y: 1650, parent: null, desc: 'Tổng hợp toàn bộ các hoạt động, trạng thái và thuộc tính tinh thần diễn ra trong não bộ con người, phản ánh hiện thực khách quan.', example: 'Nền tảng cốt lõi của khoa học hành vi và nhận thức con người.' },
 
-            // Tầng 1: Các tiêu chí phân loại
-            { id: 't_time', label: '1. Theo thời gian tồn tại', level: 1, x: 350, y: 850, parent: 'root', desc: 'Phân loại dựa trên tính ổn định và thời gian diễn ra của hiện tượng tâm lý trong đời sống tinh thần.', example: 'Giúp phân biệt giữa phản ứng tức thời và đặc điểm bền vững.' },
-            { id: 't_con', label: '2. Theo ý thức', level: 1, x: 800, y: 850, parent: 'root', desc: 'Phân loại dựa vào mức độ nhận biết và kiểm soát của lý trí.', example: 'Đánh giá mức độ chủ động của hành vi cá nhân.' },
-            { id: 't_act', label: '3. Theo hoạt động', level: 1, x: 1250, y: 850, parent: 'root', desc: 'Phân loại dựa trên trạng thái biểu hiện thành hành động cụ thể hay tiềm ẩn bên trong.', example: 'Phân biệt hiện tượng đang bộc lộ và hiện tượng dự trữ.' },
-            { id: 't_soc', label: '4. Cá nhân & Xã hội', level: 1, x: 1850, y: 850, parent: 'root', desc: 'Phân loại dựa trên chủ thể mang hiện tượng tâm lý là một cá nhân độc lập hay cộng đồng xã hội.', example: 'Kết nối tâm lý học cá nhân với tâm lý học xã hội và văn hóa.' },
+            // Tầng 1: Các tiêu chí phân loại chính
+            { id: 't_time', label: '1. Theo thời gian tồn tại', level: 1, x: 1600, y: 1350, parent: 'root', desc: 'Phân loại dựa trên tính ổn định và thời gian diễn ra của hiện tượng tâm lý trong đời sống tinh thần.', example: 'Phân biệt phản ứng tức thời với đặc điểm nhân cách bền vững.' },
+            { id: 't_con', label: '2. Theo ý thức', level: 1, x: 3200, y: 1350, parent: 'root', desc: 'Phân loại dựa vào mức độ nhận biết, kiểm soát của lý trí và tầng vô thức.', example: 'Đánh giá mức độ chủ động và tự chủ của hành vi cá nhân.' },
+            { id: 't_act', label: '3. Theo hoạt động', level: 1, x: 3850, y: 1350, parent: 'root', desc: 'Phân loại dựa trên trạng thái biểu hiện thành hành động trực tiếp hay tiềm ẩn.', example: 'Phân biệt hiện tượng đang bộc lộ và hiện tượng dự trữ.' },
+            { id: 't_soc', label: '4. Cá nhân & Xã hội', level: 1, x: 4600, y: 1350, parent: 'root', desc: 'Phân loại dựa trên chủ thể mang hiện tượng tâm lý là cá nhân hay cộng đồng xã hội.', example: 'Kết nối tâm lý học cá nhân với tâm lý học xã hội và văn hóa.' },
 
-            // Tầng 2: Chi tiết thuộc Tầng 1
-            // Theo thời gian tồn tại
-            { id: 'n_qt', label: 'Quá trình tâm lý', level: 2, x: 150, y: 550, parent: 't_time', desc: 'Có mở đầu, diễn biến và kết thúc rõ ràng, thường gắn liền với sự phản ánh đối tượng.', example: 'Quá trình nhận thức (cảm giác, tri giác), quá trình cảm xúc, quá trình ý chí.' },
-            { id: 'n_tt', label: 'Trạng thái tâm lý', level: 2, x: 350, y: 550, parent: 't_time', desc: 'Làm nền cho các quá trình tâm lý, ổn định hơn quá trình nhưng kém ổn định hơn thuộc tính.', example: 'Tâm trạng vui vẻ, sự chú ý, sự mệt mỏi trong một khoảng thời gian.' },
-            { id: 'n_th', label: 'Thuộc tính tâm lý', level: 2, x: 550, y: 550, parent: 't_time', desc: 'Các nét tâm lý rất ổn định, khó hình thành và khó mất đi, cấu thành nhân cách cá nhân.', example: 'Xu hướng, tính cách, năng lực, khí chất của mỗi người.' },
+            // ==================== NHÁNH 1: THEO THỜI GIAN TỒN TẠI ====================
+            { id: 'n_qt', label: 'Quá trình tâm lý', level: 2, x: 1100, y: 1050, parent: 't_time', desc: 'Có mở đầu, diễn biến và kết thúc rõ ràng, đóng vai trò phản ánh hiện thực.', example: 'Cảm giác đau, tư duy giải quyết bài toán, cảm xúc vui mừng.' },
+            { id: 'n_tt', label: 'Trạng thái tâm lý', level: 2, x: 2150, y: 1050, parent: 't_time', desc: 'Làm nền cho các quá trình tâm lý, ổn định hơn quá trình nhưng kém ổn định hơn thuộc tính.', example: 'Tâm trạng hào hứng, trạng thái chú ý tập trung.' },
+            { id: 'n_th', label: 'Thuộc tính tâm lý', level: 2, x: 2650, y: 1050, parent: 't_time', desc: 'Các nét tâm lý rất ổn định, khó hình thành và khó mất đi, cấu thành nhân cách cá nhân.', example: 'Tính trung thực, khí chất linh hoạt, năng lực âm nhạc.' },
 
-            // Theo ý thức
-            { id: 'n_c1', label: 'Có ý thức', level: 2, x: 700, y: 550, parent: 't_con', desc: 'Hiện tượng tâm lý mà con người nhận thức rõ ràng, làm chủ và điều khiển được hành vi của mình.', example: 'Học bài, giải toán, suy nghĩ có chủ định.' },
-            { id: 'n_c2', label: 'Chưa có ý thức', level: 2, x: 900, y: 550, parent: 't_con', desc: 'Hiện tượng diễn ra ở tầng vô thức, tiềm thức, cá nhân chưa kịp nhận ra hoặc không kiểm soát hoàn toàn.', example: 'Hành vi bản năng, thói quen lặp lại tự động, ẩn ức.' },
+                // --- Chi tiết Quá trình tâm lý ---
+                { id: 'qt_nhanthuc', label: 'Quá trình nhận thức', level: 3, x: 450, y: 750, parent: 'n_qt', desc: 'Quá trình phản ánh các thuộc tính của sự vật hiện tượng từ bề ngoài đến bản chất.', example: 'Từ việc nhìn thấy quả táo (cảm giác, tri giác) đến hiểu cấu trúc hóa học của nó (tư duy).' },
+                    { id: 'nc_camgiac', label: 'Cảm giác', level: 4, x: 60, y: 450, parent: 'qt_nhanthuc', desc: 'Phản ánh từng thuộc tính riêng lẻ của sự vật khi chúng tác động trực tiếp vào giác quan.', example: 'Cảm giác vị ngọt của đường trên lưỡi.' },
+                    { id: 'nc_trigiac', label: 'Tri giác', level: 4, x: 200, y: 450, parent: 'qt_nhanthuc', desc: 'Phản ánh toàn vẹn các thuộc tính bề ngoài của sự vật khi chúng đang tác động trực tiếp.', example: 'Nhận ra đó là một quả táo đỏ chín mọng.' },
+                    { id: 'nc_trinho', label: 'Trí nhớ', level: 4, x: 340, y: 450, parent: 'qt_nhanthuc', desc: 'Quá trình ghi nhớ, giữ gìn và tái hiện lại kinh nghiệm sống.', example: 'Nhớ lại công thức toán học đã học tuần trước.' },
+                    { id: 'nc_tuongtuong', label: 'Tưởng tượng', level: 4, x: 480, y: 450, parent: 'qt_nhanthuc', desc: 'Quá trình xây dựng hình ảnh mới dựa trên những biểu tượng đã có.', example: 'KTS phác thảo ngôi nhà trong mơ.' },
+                    { id: 'nc_tuduy', label: 'Tư duy', level: 4, x: 620, y: 450, parent: 'qt_nhanthuc', desc: 'Phản ánh bản chất, mối quan hệ có tính quy luật của sự vật ở mức khái quát cao.', example: 'Giải thích nguyên nhân kinh tế suy thoái.' },
+                    { id: 'nc_ngonngu', label: 'Ngôn ngữ', level: 4, x: 760, y: 450, parent: 'qt_nhanthuc', desc: 'Phương tiện giao tiếp và là hiện thực trực tiếp của tư duy.', example: 'Nói hoặc viết ra ý tưởng của mình.' },
 
-            // Theo hoạt động
-            { id: 'n_a1', label: 'Sống động', level: 2, x: 1150, y: 550, parent: 't_act', desc: 'Đang trực tiếp diễn ra, bộc lộ mạnh mẽ trong hoạt động thực tiễn hiện tại.', example: 'Phản ứng tức giận khi gặp chuyện bất bình, tư duy giải quyết tình huống.' },
-            { id: 'n_a2', label: 'Tiềm tàng', level: 2, x: 1350, y: 550, parent: 't_act', desc: 'Tồn tại dưới dạng tiềm năng, chưa bộc lộ ngay nhưng sẽ chuyển hóa thành hành động khi có kích thích phù hợp.', example: 'Kiến thức đã học nhưng đang cất giấu trong trí nhớ dài hạn chưa cần dùng tới.' },
+                { id: 'qt_camxuc', label: 'Quá trình cảm xúc', level: 3, x: 1250, y: 750, parent: 'n_qt', desc: 'Phản ánh thái độ của con người đối với hiện thực và với chính mình.', example: 'Cảm giác vui mừng khi đạt điểm cao.' },
+                    { id: 'cx_vuimung', label: 'Vui mừng', level: 4, x: 920, y: 450, parent: 'qt_camxuc', desc: 'Cảm xúc tích cực khi đạt được mục đích.', example: 'Nhận được món quà yêu thích.' },
+                    { id: 'cx_tucgian', label: 'Tức giận', level: 4, x: 1060, y: 450, parent: 'qt_camxuc', desc: 'Phản ứng cảm xúc trước sự cản trở hoặc bất công.', example: 'Bị cắt ngang lời khi đang phát biểu.' },
+                    { id: 'cx_dechiu', label: 'Dễ chịu', level: 4, x: 1200, y: 450, parent: 'qt_camxuc', desc: 'Sự thoải mái nhẹ nhàng về thể chất và tinh thần.', example: 'Nằm nghỉ ngơi trong phòng mát mẻ.' },
+                    { id: 'cx_khochiu', label: 'Khó chịu', level: 4, x: 1340, y: 450, parent: 'qt_camxuc', desc: 'Cảm giác bứt rứt, không như ý.', example: 'Mặc áo quá chật.' },
+                    { id: 'cx_nhietnhinh', label: 'Nhiệt tình', level: 4, x: 1480, y: 450, parent: 'qt_camxuc', desc: 'Sự hăng hái, dấn thân vào công việc.', example: 'Xung phong tổ chức sự kiện lớp.' },
+                    { id: 'cx_thoiho', label: 'Thờ ơ...', level: 4, x: 1620, y: 450, parent: 'qt_camxuc', desc: 'Sự dửng dưng, thiếu quan tâm.', example: 'Không bận tâm đến kết quả thi đấu của đội khác.' },
 
-            // Cá nhân & Xã hội (7 hiện tượng xã hội)
-            { id: 's_1', label: 'Phong tục', level: 2, x: 1500, y: 550, parent: 't_soc', desc: 'Thói quen lâu đời đã thành nếp, được cộng đồng thừa nhận và tuân theo từ thế hệ này sang thế hệ khác.', example: 'Phong tục gói bánh chưng ngày Tết.' },
-            { id: 's_2', label: 'Tập quán', level: 2, x: 1590, y: 550, parent: 't_soc', desc: 'Những hành vi quen thuộc trong sinh hoạt hàng ngày mang tính địa phương hoặc nhóm.', example: 'Thói quen uống trà buổi sáng của người lớn tuổi.' },
-            { id: 's_3', label: 'Định kiến', level: 2, x: 1680, y: 550, parent: 't_soc', desc: 'Thái độ đánh giá cứng nhắc, phiến diện dựa trên định hình sẵn về một nhóm người hoặc sự việc.', example: 'Định kiến giới tính trong công việc lãnh đạo.' },
-            { id: 's_4', label: 'Tin đồn', level: 2, x: 1770, y: 550, parent: 't_soc', desc: 'Thông tin chưa được kiểm chứng lan truyền nhanh chóng trong xã hội.', example: 'Tin đồn thất thiệt về giá cả thị trường.' },
-            { id: 's_5', label: 'Dư luận xã hội', level: 2, x: 1860, y: 550, parent: 't_soc', desc: 'Luồng ý kiến chung của đông đảo công chúng thể hiện thái độ đánh giá đối với các vấn đề chung.', example: 'Dư luận lên án hành vi xả rác bừa bãi nơi công cộng.' },
-            { id: 's_6', label: 'Tâm trạng xã hội', level: 2, x: 1950, y: 550, parent: 't_soc', desc: 'Sắc thái cảm xúc chung bao trùm một cộng đồng rộng lớn trong một thời kỳ nhất định.', example: 'Tâm trạng phấn khởi dịp đầu năm mới hoặc lo âu mùa dịch bệnh.' },
-            { id: 's_7', label: '"Mốt"', level: 2, x: 2040, y: 550, parent: 't_soc', desc: 'Sự ưa chuộng nhất thời đối với một kiểu dáng, phong cách ứng xử hay tiêu dùng trong xã hội.', example: 'Xu hướng thời trang hoặc phong cách sống thịnh hành trên mạng xã hội.' }
+                { id: 'qt_hanhdong', label: 'Hành động ý chí', level: 3, x: 1850, y: 750, parent: 'n_qt', desc: 'Hành động có ý thức, đòi hỏi nỗ lực khắc phục khó khăn để đạt mục đích.', example: 'Cố gắng ôn bài suốt đêm dù rất buồn ngủ.' },
+
+                // --- Chi tiết Trạng thái tâm lý ---
+                { id: 'tt_chuy', label: 'Chú ý', level: 3, x: 2050, y: 750, parent: 'n_tt', desc: 'Sự tập trung của ý thức vào một hay một nhóm sự vật hiện tượng.', example: 'Tập trung nghe giảng bài trên lớp.' },
+                { id: 'tt_tamtrang', label: 'Tâm trạng', level: 3, x: 2250, y: 750, parent: 'n_tt', desc: 'Trạng thái cảm xúc chung làm nền cho mọi hoạt động trong một thời gian.', example: 'Tâm trạng u ám vào một ngày mưa buồn.' },
+
+                // --- Chi tiết Thuộc tính tâm lý ---
+                { id: 'th_xuhuong', label: 'Xu hướng', level: 3, x: 2450, y: 750, parent: 'n_th', desc: 'Hệ thống nhu cầu, hứng thú, lý tưởng định hướng hoạt động.', example: 'Đam mê nghiên cứu khoa học.' },
+                { id: 'th_khichat', label: 'Kh khí chất', level: 3, x: 2600, y: 750, parent: 'n_th', desc: 'Đặc điểm động kinh học của hệ thần kinh, quyết định nhịp độ phản ứng.', example: 'Khí chất nóng nảy hoặc điềm tĩnh.' },
+                { id: 'th_tinhcach', label: 'Tính cách', level: 3, x: 2750, y: 750, parent: 'n_th', desc: 'Hệ thống thái độ đối với thế giới và cách ứng xử đặc trưng.', example: 'Đức tính cần cù, khiêm tốn, trung thực.' },
+                { id: 'th_nangluc', label: 'Năng lực', level: 3, x: 2900, y: 750, parent: 'n_th', desc: 'Tổ hợp các thuộc tính đáp ứng yêu cầu của hoạt động.', example: 'Năng lực tư duy logic, năng lực âm nhạc.' },
+
+            // ==================== NHÁNH 2: THEO Ý THỨC ====================
+            { id: 'n_c1', label: 'Có ý thức', level: 2, x: 3100, y: 1050, parent: 't_con', desc: 'Hiện tượng tâm lý con người nhận thức rõ ràng, làm chủ và điều khiển được hành vi.', example: 'Giải bài tập toán theo chủ đích.' },
+            { id: 'n_c2', label: 'Chưa có ý thức', level: 2, x: 3450, y: 1050, parent: 't_con', desc: 'Hiện tượng diễn ra ở tầng vô thức hoặc tiềm thức, chưa được lý trí kiểm soát hoàn toàn.', example: 'Phản xạ tự vệ chớp mắt.' },
+
+                // --- Chi tiết Chưa có ý thức ---
+                { id: 'vothuc', label: 'Vô thức', level: 3, x: 3350, y: 750, parent: 'n_c2', desc: 'Hiện tượng tâm lý ở tầng sâu, không có sự kiểm soát của ý thức.', example: 'Các bản năng sinh học, hiện tượng mộng du.' },
+                { id: 'tiemthuc', label: 'Tiềm thức', level: 3, x: 3550, y: 750, parent: 'n_c2', desc: 'Tâm lý ở tầng ngầm, sẵn sàng trồi lên ý thức khi cần.', example: 'Thói quen đi xe máy không cần nhìn số sang.' },
+
+            // ==================== NHÁNH 3: THEO HOẠT ĐỘNG ====================
+            { id: 'n_a1', label: 'Sống động', level: 2, x: 3750, y: 1050, parent: 't_act', desc: 'Đang trực tiếp diễn ra, bộc lộ mạnh mẽ trong hoạt động thực tiễn hiện tại.', example: 'Phản ứng tức giận hoặc đang tư duy giải toán.' },
+            { id: 'n_a2', label: 'Tiềm tàng', level: 2, x: 4050, y: 1050, parent: 't_act', desc: 'Tồn tại dưới dạng tiềm năng, cất giấu chưa bộc lộ ngay.', example: 'Tri thức đã học nhưng đang lưu trong trí nhớ dài hạn.' },
+
+                // --- Chi tiết Sống động & Tiềm tàng ---
+                { id: 'hd_hanhvi', label: 'Thể hiện ở hành vi', level: 3, x: 3670, y: 750, parent: 'n_a1', desc: 'Bộc lộ qua cử chỉ, động tác, phản ứng cơ thể.', example: 'Cười lớn khi nghe chuyện vui.' },
+                { id: 'hd_hoatdong', label: 'Hoạt động', level: 3, x: 3830, y: 750, parent: 'n_a1', desc: 'Bộc lộ qua phương thức hoạt động thực tiễn có chủ đích.', example: 'Tham gia giải quyết dự án nhóm.' },
+
+                { id: 'sanpham', label: 'Trong sản phẩm hoạt động', level: 3, x: 4050, y: 750, parent: 'n_a2', desc: 'Kết tinh năng lực và phẩm chất tâm lý vào sản phẩm tạo ra.', example: 'Bài thơ, bức tranh, hay phần mềm do cá nhân làm ra phản ánh năng lực.' },
+
+            // ==================== NHÁNH 4: CÁ NHÂN & XÃ HỘI ====================
+            { id: 's_1', label: 'Phong tục', level: 2, x: 4250, y: 1050, parent: 't_soc', desc: 'Thói quen lâu đời thành nếp, cộng đồng tuân theo qua nhiều thế hệ.', example: 'Phong tục gói bánh chưng ngày Tết.' },
+            { id: 's_2', label: 'Tập quán', level: 2, x: 4400, y: 1050, parent: 't_soc', desc: 'Hành vi quen thuộc trong sinh hoạt hàng ngày mang tính địa phương.', example: 'Uống trà buổi sáng của người lớn tuổi.' },
+            { id: 's_3', label: 'Định kiến', level: 2, x: 4550, y: 1050, parent: 't_soc', desc: 'Thái độ đánh giá cứng nhắc, phiến diện dựa trên định hình sẵn.', example: 'Định kiến về giới tính trong nghề nghiệp.' },
+            { id: 's_4', label: 'Tin đồn', level: 2, x: 4700, y: 1050, parent: 't_soc', desc: 'Thông tin chưa kiểm chứng lan truyền nhanh trong xã hội.', example: 'Tin đồn thất thiệt về giá vàng.' },
+            { id: 's_5', label: 'Dư luận xã hội', level: 2, x: 4850, y: 1050, parent: 't_soc', desc: 'Luồng ý kiến chung của đông đảo công chúng đánh giá sự việc.', example: 'Dư luận lên án hành vi xả rác bừa bãi.' },
+            { id: 's_6', label: 'Tâm trạng xã hội', level: 2, x: 5000, y: 1050, parent: 't_soc', desc: 'Sắc thái cảm xúc chung bao trùm cộng đồng rộng lớn.', example: 'Tâm trạng phấn khởi dịp năm mới.' },
+            { id: 's_7', label: '"Mốt"', level: 2, x: 5150, y: 1050, parent: 't_soc', desc: 'Sự ưa chuộng nhất thời đối với một kiểu dáng hay phong cách.', example: 'Xu hướng thời trang thịnh hành.' }
         ];
 
-        // Khởi tạo vị trí và render giao diện
+        // Khởi tạo render giao diện
         const nodesContainer = document.getElementById('nodes-container');
         const svgContainer = document.getElementById('connections-svg');
 
-        function renderMap() {
+        let activeNodeId = null;
+
+        function renderMap(filterText = '') {
             nodesContainer.innerHTML = '';
             svgContainer.innerHTML = '';
+
+            const lowerFilter = filterText.toLowerCase();
 
             // 1. Vẽ các đoạn thẳng kết nối (Straight Lines)
             treeData.forEach(node => {
                 if (node.parent) {
                     const parentNode = treeData.find(p => p.id === node.parent);
                     if (parentNode) {
-                        // Tính toán tọa độ tâm node (Giả định kích thước node card: rộng 140px, cao 60px)
                         const x1 = parentNode.x + 70;
                         const y1 = parentNode.y + 30;
                         const x2 = node.x + 70;
@@ -134,43 +194,77 @@
                         line.setAttribute('y2', y2);
                         line.setAttribute('stroke', '#38bdf8');
                         line.setAttribute('stroke-width', '2');
-                        line.setAttribute('stroke-opacity', '0.4');
+                        line.setAttribute('stroke-opacity', '0.3');
+                        line.id = `line-${node.id}-${parentNode.id}`;
                         svgContainer.appendChild(line);
                     }
                 }
             });
 
-            // 2. Vẽ các thẻ node hiển thị thông tin
+            // 2. Vẽ các thẻ node
             treeData.forEach(node => {
                 const card = document.createElement('div');
-                card.className = `node-card absolute bg-slate-900/90 border border-slate-700 p-3 rounded-xl shadow-lg cursor-pointer flex flex-col items-center justify-center text-center w-[140px] h-[60px] backdrop-blur-sm`;
+                const isMatch = filterText && node.label.toLowerCase().includes(lowerFilter);
+
+                card.className = `node-card absolute bg-slate-900/90 border p-3 rounded-2xl shadow-lg cursor-pointer flex flex-col items-center justify-center text-center w-[140px] h-[60px] backdrop-blur-md`;
                 card.style.left = `${node.x}px`;
                 card.style.top = `${node.y}px`;
-                
-                // Màu sắc phân biệt các tầng (Cây gia phả)
+
+                // Màu sắc phân tầng
                 if (node.level === 0) {
-                    card.className += ` border-amber-500 bg-amber-950/40 shadow-amber-500/20`;
+                    card.className += ` border-amber-500 bg-amber-950/50 shadow-amber-500/20`;
                 } else if (node.level === 1) {
                     card.className += ` border-sky-500 bg-sky-950/40`;
+                } else if (node.level === 2) {
+                    card.className += ` border-indigo-500 bg-indigo-950/30`;
                 } else {
-                    card.className += ` border-slate-600 hover:border-sky-400`;
+                    card.className += ` border-slate-700 hover:border-sky-400`;
+                }
+
+                if (isMatch) {
+                    card.className += ` ring-4 ring-sky-400 border-sky-400 scale-105 z-40`;
                 }
 
                 card.innerHTML = `
                     <span class="text-xs font-bold text-slate-100 line-clamp-2">${node.label}</span>
                 `;
 
+                // Hiệu ứng hover làm sáng đường nối
+                card.onmouseenter = () => highlightConnections(node.id, true);
+                card.onmouseleave = () => highlightConnections(node.id, false);
+
                 card.onclick = () => openModal(node);
                 nodesContainer.appendChild(card);
             });
         }
 
-        // Xử lý Modal hiển thị chi tiết
+        // Làm sáng đường nối khi hover node
+        function highlightConnections(nodeId, enable) {
+            treeData.forEach(node => {
+                if (node.parent) {
+                    const line = document.getElementById(`line-${node.id}-${node.parent}`);
+                    if (line) {
+                        if (node.id === nodeId || node.parent === nodeId) {
+                            line.setAttribute('stroke-opacity', enable ? '1' : '0.3');
+                            line.setAttribute('stroke-width', enable ? '4' : '2');
+                            line.setAttribute('stroke', enable ? '#38bdf8' : '#38bdf8');
+                        }
+                    }
+                }
+            });
+        }
+
+        // Tìm kiếm nhanh
+        function handleSearch(query) {
+            renderMap(query);
+        }
+
+        // Modal xử lý chi tiết
         function openModal(node) {
             document.getElementById('modal-title').innerText = node.label;
             document.getElementById('modal-desc').innerText = node.desc;
             document.getElementById('modal-example').innerText = node.example;
-            document.getElementById('modal-category').innerText = node.level === 0 ? 'Gốc hệ thống' : `Tầng phân loại cấp ${node.level}`;
+            document.getElementById('modal-category').innerText = node.level === 0 ? 'Gốc hệ thống' : `Phân loại cấp ${node.level}`;
             document.getElementById('detail-modal').classList.remove('hidden');
         }
 
@@ -184,9 +278,9 @@
 
         let isDragging = false;
         let startX, startY;
-        let panX = -350;
-        let panY = -150;
-        let scale = 0.8;
+        let panX = -2300;
+        let panY = -800;
+        let scale = 0.55;
 
         function updateTransform() {
             canvas.style.transform = `translate(${panX}px, ${panY}px) scale(${scale})`;
@@ -212,29 +306,29 @@
 
         viewport.addEventListener('wheel', (e) => {
             e.preventDefault();
-            const zoomIntensity = 0.1;
+            const zoomIntensity = 0.08;
             if (e.deltaY < 0) {
-                scale = Math.min(scale + zoomIntensity, 2.0);
+                scale = Math.min(scale + zoomIntensity, 1.5);
             } else {
-                scale = Math.max(scale - zoomIntensity, 0.4);
+                scale = Math.max(scale - zoomIntensity, 0.25);
             }
             updateTransform();
         }, { passive: false });
 
         function zoomIn() {
-            scale = Math.min(scale + 0.15, 2.0);
+            scale = Math.min(scale + 0.1, 1.5);
             updateTransform();
         }
 
         function zoomOut() {
-            scale = Math.max(scale - 0.15, 0.4);
+            scale = Math.max(scale - 0.1, 0.25);
             updateTransform();
         }
 
         function resetView() {
-            panX = -350;
-            panY = -150;
-            scale = 0.8;
+            panX = -2300;
+            panY = -800;
+            scale = 0.55;
             updateTransform();
         }
 
