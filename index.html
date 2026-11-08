@@ -15,13 +15,19 @@
             user-select: none;
         }
         .node-card {
-            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
         }
         .node-card:hover {
             transform: translateY(-4px) scale(1.08);
             box-shadow: 0 20px 35px -5px rgba(56, 189, 248, 0.6);
             border-color: #38bdf8;
             z-index: 100;
+        }
+        /* Style linh hoạt cho nhãn văn bản */
+        .node-label {
+            transition: font-size 0.15s ease, font-weight 0.15s ease;
+            white-space: normal;
+            word-break: break-word;
         }
     </style>
 </head>
@@ -34,8 +40,7 @@
         </h1>
         <p class="text-xs text-slate-300 leading-relaxed mb-3">
             • <b>Kéo chuột (Drag):</b> Di chuyển toàn cảnh.<br>
-            • <b>Cuộn chuột (Scroll):</b> Phóng to / Thu nhỏ.<br>
-            • <b>Rê chuột (Hover):</b> Hiện nhanh nội dung khi nhìn xa.<br>
+            • <b>Cuộn chuột (Scroll):</b> Phóng to / Thu nhỏ (Chữ tự điều chỉnh rõ nét).<br>
             • <b>Click vào thẻ:</b> Xem chi tiết & ví dụ.
         </p>
         <!-- Ô tìm kiếm nhanh -->
@@ -52,7 +57,7 @@
         <button onclick="zoomOut()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-sky-400 font-bold rounded-xl transition">-</button>
     </div>
 
-    <!-- Floating Tooltip hiển thị rõ chữ khi rê chuột nhìn xa -->
+    <!-- Floating Tooltip khi rê chuột -->
     <div id="floating-tooltip" class="fixed z-50 pointer-events-none hidden bg-slate-900/95 border border-sky-400 p-3 rounded-xl shadow-2xl max-w-xs backdrop-blur-md transition-all duration-75">
         <span id="tooltip-category" class="text-[10px] font-semibold px-2 py-0.5 bg-sky-500/20 text-sky-300 rounded-full">Phân loại</span>
         <h4 id="tooltip-title" class="text-sm font-bold text-white mt-1.5">Tiêu đề</h4>
@@ -64,9 +69,7 @@
         <div id="canvas" class="absolute top-0 left-0 w-[5600px] h-[2000px] origin-top-left">
             
             <!-- SVG Layer vẽ các đoạn thẳng nối thông tin -->
-            <svg class="absolute inset-0 w-full h-full pointer-events-none" id="connections-svg">
-                <!-- Đường nối tự động render -->
-            </svg>
+            <svg class="absolute inset-0 w-full h-full pointer-events-none" id="connections-svg"></svg>
 
             <!-- HTML Nodes Layer -->
             <div id="nodes-container" class="absolute inset-0 pointer-events-auto"></div>
@@ -170,7 +173,7 @@
 
             const lowerFilter = filterText.toLowerCase();
 
-            // 1. Vẽ các đường thẳng nối
+            // 1. Vẽ đường thẳng nối
             treeData.forEach(node => {
                 if (node.parent) {
                     const parentNode = treeData.find(p => p.id === node.parent);
@@ -194,23 +197,23 @@
                 }
             });
 
-            // 2. Vẽ các node
+            // 2. Vẽ các thẻ node
             treeData.forEach(node => {
                 const card = document.createElement('div');
                 const isMatch = filterText && node.label.toLowerCase().includes(lowerFilter);
 
-                card.className = `node-card absolute bg-slate-900/90 border p-2.5 rounded-2xl shadow-lg cursor-pointer flex flex-col items-center justify-center text-center w-[120px] h-[50px] backdrop-blur-md`;
+                card.className = `node-card absolute bg-slate-900/90 border p-2 rounded-2xl shadow-lg cursor-pointer flex flex-col items-center justify-center text-center w-[120px] min-h-[50px] backdrop-blur-md`;
                 card.style.left = `${node.x}px`;
                 card.style.top = `${node.y}px`;
 
                 if (node.level === 0) {
-                    card.className += ` border-amber-500 bg-amber-950/60 shadow-amber-500/20 w-[140px] h-[55px]`;
+                    card.className += ` border-amber-500 bg-amber-950/70 shadow-amber-500/20 w-[150px] min-h-[60px]`;
                 } else if (node.level === 1) {
-                    card.className += ` border-sky-500 bg-sky-950/50`;
+                    card.className += ` border-sky-500 bg-sky-950/60`;
                 } else if (node.level === 2) {
-                    card.className += ` border-indigo-500 bg-indigo-950/40`;
+                    card.className += ` border-indigo-500 bg-indigo-950/50`;
                 } else {
-                    card.className += ` border-slate-700 hover:border-sky-400 bg-slate-900/80`;
+                    card.className += ` border-slate-700 hover:border-sky-400 bg-slate-900/90`;
                 }
 
                 if (isMatch) {
@@ -218,10 +221,9 @@
                 }
 
                 card.innerHTML = `
-                    <span class="text-[11px] leading-snug font-bold text-slate-100 line-clamp-2">${node.label}</span>
+                    <span class="node-label text-[11px] leading-snug font-bold text-slate-100">${node.label}</span>
                 `;
 
-                // Sự kiện tương tác Tooltip khi rê chuột
                 card.onmouseenter = (e) => {
                     highlightConnections(node.id, true);
                     showTooltip(node, e);
@@ -234,6 +236,22 @@
 
                 nodesContainer.appendChild(card);
             });
+            
+            // Cập nhật lại cỡ chữ theo tỷ lệ scale hiện tại
+            updateFontSizes();
+        }
+
+        // Tự động điều chỉnh kích thước chữ tương ứng với độ thu nhỏ (Zoom Out)
+        function updateFontSizes() {
+            const labels = document.querySelectorAll('.node-label');
+            // Tính cỡ chữ tỉ lệ nghịch với scale (càng thu nhỏ scale, cỡ chữ cơ sở càng lớn lên)
+            let calculatedSize = Math.max(11, Math.min(26, 11 / Math.pow(scale, 0.75)));
+            let fontWeight = scale < 0.4 ? '800' : (scale < 0.6 ? '700' : '600');
+
+            labels.forEach(label => {
+                label.style.fontSize = `${calculatedSize}px`;
+                label.style.fontWeight = fontWeight;
+            });
         }
 
         function showTooltip(node, e) {
@@ -241,7 +259,6 @@
             document.getElementById('tooltip-desc').innerText = node.desc;
             document.getElementById('tooltip-category').innerText = node.level === 0 ? 'Gốc hệ thống' : `Phân loại cấp ${node.level}`;
             
-            // Đặt vị trí tooltip gần con trỏ chuột
             tooltip.style.left = `${e.clientX + 15}px`;
             tooltip.style.top = `${e.clientY + 15}px`;
             tooltip.classList.remove('hidden');
@@ -293,6 +310,7 @@
 
         function updateTransform() {
             canvas.style.transform = `translate(${panX}px, ${panY}px) scale(${scale})`;
+            updateFontSizes();
         }
 
         viewport.addEventListener('mousedown', (e) => {
