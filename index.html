@@ -18,8 +18,8 @@
             transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
         }
         .node-card:hover {
-            transform: translateY(-4px) scale(1.05);
-            box-shadow: 0 15px 30px -5px rgba(56, 189, 248, 0.5);
+            transform: translateY(-4px) scale(1.08);
+            box-shadow: 0 20px 35px -5px rgba(56, 189, 248, 0.6);
             border-color: #38bdf8;
             z-index: 100;
         }
@@ -33,9 +33,10 @@
             <span>🌳</span> Bản Đồ Phân Loại Tâm Lý
         </h1>
         <p class="text-xs text-slate-300 leading-relaxed mb-3">
-            • <b>Kéo chuột (Drag):</b> Di chuyển vùng nhìn.<br>
+            • <b>Kéo chuột (Drag):</b> Di chuyển toàn cảnh.<br>
             • <b>Cuộn chuột (Scroll):</b> Phóng to / Thu nhỏ.<br>
-            • <b>Click vào thẻ:</b> Xem định nghĩa & ví dụ chi tiết.
+            • <b>Rê chuột (Hover):</b> Hiện nhanh nội dung khi nhìn xa.<br>
+            • <b>Click vào thẻ:</b> Xem chi tiết & ví dụ.
         </p>
         <!-- Ô tìm kiếm nhanh -->
         <div class="relative">
@@ -49,6 +50,13 @@
         <button onclick="zoomIn()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-sky-400 font-bold rounded-xl transition">+</button>
         <button onclick="resetView()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs rounded-xl transition font-medium">Mặc định</button>
         <button onclick="zoomOut()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-sky-400 font-bold rounded-xl transition">-</button>
+    </div>
+
+    <!-- Floating Tooltip hiển thị rõ chữ khi rê chuột nhìn xa -->
+    <div id="floating-tooltip" class="fixed z-50 pointer-events-none hidden bg-slate-900/95 border border-sky-400 p-3 rounded-xl shadow-2xl max-w-xs backdrop-blur-md transition-all duration-75">
+        <span id="tooltip-category" class="text-[10px] font-semibold px-2 py-0.5 bg-sky-500/20 text-sky-300 rounded-full">Phân loại</span>
+        <h4 id="tooltip-title" class="text-sm font-bold text-white mt-1.5">Tiêu đề</h4>
+        <p id="tooltip-desc" class="text-xs text-slate-300 mt-1 line-clamp-3">Mô tả ngắn...</p>
     </div>
 
     <!-- Vùng Workspace chứa Sơ đồ 2D -->
@@ -66,7 +74,7 @@
         </div>
     </div>
 
-    <!-- Modal Chi tiết Khái niệm -->
+    <!-- Modal Chi tiết Khái niệm (Khi click) -->
     <div id="detail-modal" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm hidden flex items-center justify-center p-4">
         <div class="bg-slate-900 border border-sky-500/50 w-full max-w-md p-6 rounded-2xl shadow-2xl relative">
             <button onclick="closeModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white text-2xl font-bold">&times;</button>
@@ -83,7 +91,7 @@
     <script>
         const treeData = [
             // Gốc (Thấp nhất)
-            { id: 'root', label: 'HIỆN TƯỢNG TÂM LÝ', level: 0, x: 2600, y: 1650, parent: null, desc: 'Tổng hợp toàn bộ các hoạt động, trạng thái và thuộc tính tinh thần diễn ra trong brain/não bộ con người, phản ánh hiện thực khách quan.', example: 'Nền tảng cốt lõi của khoa học hành vi và nhận thức con người.' },
+            { id: 'root', label: 'HIỆN TƯỢNG TÂM LÝ', level: 0, x: 2600, y: 1650, parent: null, desc: 'Tổng hợp toàn bộ các hoạt động, trạng thái và thuộc tính tinh thần diễn ra trong não bộ con người, phản ánh hiện thực khách quan.', example: 'Nền tảng cốt lõi của khoa học hành vi và nhận thức con người.' },
 
             // Tầng 1: Các tiêu chí phân loại chính
             { id: 't_time', label: '1. Theo thời gian tồn tại', level: 1, x: 1400, y: 1350, parent: 'root', desc: 'Phân loại dựa trên tính ổn định và thời gian diễn ra của hiện tượng tâm lý trong đời sống tinh thần.', example: 'Phân biệt phản ứng tức thời với đặc điểm nhân cách bền vững.' },
@@ -154,6 +162,7 @@
 
         const nodesContainer = document.getElementById('nodes-container');
         const svgContainer = document.getElementById('connections-svg');
+        const tooltip = document.getElementById('floating-tooltip');
 
         function renderMap(filterText = '') {
             nodesContainer.innerHTML = '';
@@ -212,12 +221,34 @@
                     <span class="text-[11px] leading-snug font-bold text-slate-100 line-clamp-2">${node.label}</span>
                 `;
 
-                card.onmouseenter = () => highlightConnections(node.id, true);
-                card.onmouseleave = () => highlightConnections(node.id, false);
+                // Sự kiện tương tác Tooltip khi rê chuột
+                card.onmouseenter = (e) => {
+                    highlightConnections(node.id, true);
+                    showTooltip(node, e);
+                };
+                card.onmouseleave = () => {
+                    highlightConnections(node.id, false);
+                    hideTooltip();
+                };
                 card.onclick = () => openModal(node);
 
                 nodesContainer.appendChild(card);
             });
+        }
+
+        function showTooltip(node, e) {
+            document.getElementById('tooltip-title').innerText = node.label;
+            document.getElementById('tooltip-desc').innerText = node.desc;
+            document.getElementById('tooltip-category').innerText = node.level === 0 ? 'Gốc hệ thống' : `Phân loại cấp ${node.level}`;
+            
+            // Đặt vị trí tooltip gần con trỏ chuột
+            tooltip.style.left = `${e.clientX + 15}px`;
+            tooltip.style.top = `${e.clientY + 15}px`;
+            tooltip.classList.remove('hidden');
+        }
+
+        function hideTooltip() {
+            tooltip.classList.add('hidden');
         }
 
         function highlightConnections(nodeId, enable) {
@@ -239,6 +270,7 @@
         }
 
         function openModal(node) {
+            hideTooltip();
             document.getElementById('modal-title').innerText = node.label;
             document.getElementById('modal-desc').innerText = node.desc;
             document.getElementById('modal-example').innerText = node.example;
